@@ -1,18 +1,20 @@
 const std = @import("std");
 const Plugin = @import("plugin.zig").Plugin;
 const GameState = @import("gameState.zig").GameState;
+const rl = @import("raylib");
 
-const snake = Plugin.init(
-    "../snake/zig-out/lib/snake.dll",
-    "./snake.dll",
-);
-const render = Plugin.init(
-    "../render/zig-out/lib/render.dll",
-    "./render.dll",
-);
+const snake = Plugin{
+    .lib_path = "zig-out/lib/snake.dll",
+    .local_file_path = "./snake.dll",
+};
+const render = Plugin{
+    .lib_path = "zig-out/lib/render.dll",
+    .local_file_path = "./render.dll",
+};
 var plugins = [_]Plugin{ snake, render };
 
 pub fn main() !u8 {
+    rl.setTargetFPS(60); //force raylib to be loaded
     var state: GameState = .{};
 
     for (&plugins) |*plugin| {
@@ -28,11 +30,7 @@ pub fn main() !u8 {
         @call(.auto, plugin.init.?, .{&state});
     }
 
-    var timer = try std.time.Timer.start();
     while (!state.should_exit) {
-        if (timer.read() < std.time.ns_per_s) continue;
-        timer.reset();
-
         for (&plugins) |*plugin| {
             if (plugin.isModified() catch false) {
                 plugin.unload();

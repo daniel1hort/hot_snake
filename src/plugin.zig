@@ -1,7 +1,7 @@
 const std = @import("std");
 const GameState = @import("gameState.zig").GameState;
 
-fn copyFile(src: []const u8, dest: []const u8) !void {
+pub fn copyFile(src: []const u8, dest: []const u8) !void {
     var src_file = try std.fs.cwd().openFile(src, .{});
     defer src_file.close();
     var dest_file = try std.fs.cwd().createFile(dest, .{});
@@ -26,22 +26,21 @@ pub const Plugin = struct {
     update: ?*const fn (*GameState) void = null,
     last_modified: i128 = 0,
 
-    pub fn init(lib_path: []const u8, local_file_path: []const u8) Plugin {
-        return .{
-            .lib_path = lib_path,
-            .local_file_path = local_file_path,
-        };
-    }
-
     pub fn load(self: *Plugin) !void {
         if (self.dll) |_| {
             return; // already loaded
         }
 
+        _ = try isModified(self);
+
+        std.log.info("attempt to load {s}", .{self.local_file_path});
+
         try copyFile(self.lib_path, self.local_file_path);
         self.dll = try std.DynLib.open(self.local_file_path);
         self.init = self.dll.?.lookup(*const fn (*GameState) void, "init") orelse unreachable;
         self.update = self.dll.?.lookup(*const fn (*GameState) void, "update") orelse unreachable;
+
+        std.log.info("successfuly loaded {s}", .{self.local_file_path});
     }
 
     pub fn unload(self: *Plugin) void {

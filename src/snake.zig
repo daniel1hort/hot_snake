@@ -1,5 +1,5 @@
 const std = @import("std");
-const GameState = @import("gameState").GameState;
+const GameState = @import("gameState.zig").GameState;
 
 export fn init(state: *GameState) void {
     _ = state;
