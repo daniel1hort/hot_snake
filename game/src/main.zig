@@ -61,23 +61,35 @@ pub const Plugin = struct {
     }
 };
 
+const snake = Plugin.init(
+    "../snake/zig-out/lib/snake.dll",
+    "./snake.dll",
+);
+const render = Plugin.init(
+    "../render/zig-out/lib/render.dll",
+    "./render.dll",
+);
+var plugins = [_]Plugin{ snake, render };
+
 pub fn main() !u8 {
-    var snake_path = "../snake/zig-out/lib/snake.dll";
-    var snake = Plugin.init(snake_path, "./snake.dll");
-    try snake.load();
-    defer snake.unload();
+    for (&plugins) |*plugin| {
+        try plugin.load();
+        defer plugin.unload();
+    }
 
     var timer = try std.time.Timer.start();
     while (true) {
-        if(timer.read() < std.time.ns_per_s) continue;
+        if (timer.read() < std.time.ns_per_s) continue;
         timer.reset();
 
-        if (snake.isModified() catch false) {
-            snake.unload();
-            try snake.load();
+        for (&plugins) |*plugin| {
+            if (plugin.isModified() catch false) {
+                plugin.unload();
+                try plugin.load();
+            }
+
+            @call(.auto, plugin.update.?, .{});
         }
-        //@call(.auto, snake.update.?, .{});
-        snake.update.?();
     }
 
     return 0;
