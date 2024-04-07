@@ -24,6 +24,7 @@ pub const Plugin = struct {
     dll: ?std.DynLib = null,
     init: ?*const fn (*GameState) void = null,
     update: ?*const fn (*GameState) void = null,
+    deinit: ?*const fn (*GameState) void = null,
     last_modified: i128 = 0,
 
     pub fn load(self: *Plugin) !void {
@@ -33,12 +34,13 @@ pub const Plugin = struct {
 
         _ = try isModified(self);
 
-        std.log.info("attempt to load {s}", .{self.local_file_path});
+        std.log.info("attempting to load {s}", .{self.local_file_path});
 
         try copyFile(self.lib_path, self.local_file_path);
         self.dll = try std.DynLib.open(self.local_file_path);
         self.init = self.dll.?.lookup(*const fn (*GameState) void, "init") orelse unreachable;
         self.update = self.dll.?.lookup(*const fn (*GameState) void, "update") orelse unreachable;
+        self.deinit = self.dll.?.lookup(*const fn (*GameState) void, "deinit") orelse unreachable;
 
         std.log.info("successfuly loaded {s}", .{self.local_file_path});
     }
@@ -49,6 +51,7 @@ pub const Plugin = struct {
             self.dll = null;
             self.init = null;
             self.update = null;
+            self.deinit = null;
         }
     }
 

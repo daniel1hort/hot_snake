@@ -4,24 +4,20 @@ const rl = @import("raylib");
 
 export fn init(state: *GameState) void {
     _ = state;
-    std.debug.print("init render\n", .{});
 
     const screenWidth = 800;
     const screenHeight = 450;
 
+    rl.setConfigFlags(.flag_window_topmost);
     rl.initWindow(
         screenWidth,
         screenHeight,
         "raylib [core] example - basic window",
     );
-
     rl.setTargetFPS(60);
 }
 
 export fn update(state: *GameState) void {
-    std.debug.print("update render {d}\n", .{state.ticks});
-
-    state.ticks += 1;
     state.should_exit = rl.windowShouldClose();
 
     rl.beginDrawing();
@@ -34,4 +30,9 @@ export fn update(state: *GameState) void {
         rl.Color.blue,
     );
     rl.endDrawing();
+}
+
+export fn deinit(state: *GameState) void {
+    _ = state;
+    rl.closeWindow();
 }

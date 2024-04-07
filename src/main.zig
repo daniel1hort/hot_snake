@@ -41,5 +41,9 @@ pub fn main() !u8 {
         }
     }
 
+    for (&plugins) |plugin| {
+        @call(.auto, plugin.deinit.?, .{&state});
+    }
+
     return 0;
 }
