@@ -1,7 +1,7 @@
 const std = @import("std");
 
 pub fn build(b: *std.Build) void {
-    const build_exe = b.option(bool, "build_exe", "only build the game shared library") orelse false;
+    const build_exe = b.option(bool, "build-exe", "only build the game shared library") orelse false;
 
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});

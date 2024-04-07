@@ -1,38 +1,130 @@
 const std = @import("std");
 const GameState = @import("gameState.zig").GameState;
 const rl = @import("raylib");
+const types = @import("gameState.zig");
+
+fn cString(text: []u8) [:0]u8 {
+    return text[0 .. text.len - 1 :0];
+}
+
+const fore_color: rl.Color = .{ .a = 255, .r = 43, .g = 51, .b = 26 };
+const back_color: rl.Color = .{ .a = 255, .r = 170, .g = 204, .b = 102 };
+
+const screen_width = 1000;
+const screen_height = 600;
 
 export fn init(state: *GameState) void {
-    _ = state;
-
-    const screenWidth = 800;
-    const screenHeight = 450;
-
     rl.setConfigFlags(.flag_window_topmost);
     rl.initWindow(
-        screenWidth,
-        screenHeight,
+        screen_width,
+        screen_height,
         "raylib [core] example - basic window",
     );
     rl.setTargetFPS(60);
+
+    state.allocator = std.heap.page_allocator;
+    state.snake.segments = std.ArrayList(types.Point2).init(state.allocator);
+    state.snake.segments.append(.{ .x = 3, .y = 6 }) catch unreachable;
+    state.snake.segments.append(.{ .x = 4, .y = 6 }) catch unreachable;
+    state.snake.segments.append(.{ .x = 5, .y = 6 }) catch unreachable;
+    state.snake.direction = .right;
+    state.food = .{ .x = 15, .y = 6 };
 }
 
 export fn update(state: *GameState) void {
     state.should_exit = rl.windowShouldClose();
 
     rl.beginDrawing();
-    rl.clearBackground(rl.Color.ray_white);
+    rl.clearBackground(back_color);
+
+    var buffer: [100]u8 = undefined;
+    var stream = std.io.fixedBufferStream(&buffer);
+    const writer = stream.writer();
+
+    writer.print("Score: {d}\x00", .{state.score}) catch unreachable;
+    const score_text = cString(stream.getWritten());
+    stream.reset();
     rl.drawText(
-        "Congrats! You created your first window!",
-        100,
-        200,
-        30,
-        rl.Color.blue,
+        score_text,
+        10,
+        5,
+        40,
+        fore_color,
     );
+    rl.drawLineEx(
+        .{ .x = 0, .y = 50 },
+        .{ .x = screen_width, .y = 50 },
+        5,
+        fore_color,
+    );
+
+    const size = 50;
+    //drawGrid(size);
+    drawSnake(size, state.snake.segments.items);
+    drawFood(size, state.food);
+
+    if (rl.isMouseButtonPressed(.mouse_button_left))
+        state.score += 1;
+
     rl.endDrawing();
 }
 
 export fn deinit(state: *GameState) void {
-    _ = state;
+    state.snake.segments.deinit();
     rl.closeWindow();
+}
+
+fn drawSnake(size: i32, segments: []types.Point2) void {
+    for (segments) |segment| {
+        rl.drawRectangleRounded(
+            .{
+                .x = @floatFromInt(segment.x * size),
+                .y = @floatFromInt(segment.y * size),
+                .width = @floatFromInt(size),
+                .height = @floatFromInt(size),
+            },
+            0.5,
+            10,
+            fore_color,
+        );
+    }
+}
+
+fn drawFood(size: f32, position: types.Point2) void {
+    const center: rl.Vector2 = .{
+        .x = @as(f32, @floatFromInt(position.x)) * size + size * 0.5,
+        .y = @as(f32, @floatFromInt(position.y)) * size + size * 0.5,
+    };
+
+    rl.drawCircleV(
+        center,
+        size * 0.5,
+        fore_color,
+    );
+
+    rl.drawCircleV(
+        center,
+        size * 0.17,
+        back_color,
+    );
+}
+
+fn drawGrid(size: u32) void {
+    for (1..screen_width / size) |i| {
+        rl.drawLineEx(
+            .{ .x = @floatFromInt(i * size), .y = 50 },
+            .{ .x = @floatFromInt(i * size), .y = @floatFromInt(screen_height) },
+            3,
+            fore_color,
+        );
+    }
+
+    for (1..screen_height / size) |i| {
+        rl.drawLineEx(
+            .{ .x = 0, .y = @floatFromInt(i * size) },
+            .{ .x = @floatFromInt(screen_width), .y = @floatFromInt(i * size) },
+            3,
+            fore_color,
+        );
+    }
 }
