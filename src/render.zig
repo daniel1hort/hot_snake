@@ -14,6 +14,8 @@ const screen_width = 1000;
 const screen_height = 600;
 
 export fn init(state: *GameState) void {
+    _ = state;
+
     rl.setConfigFlags(.flag_window_topmost);
     rl.initWindow(
         screen_width,
@@ -21,14 +23,6 @@ export fn init(state: *GameState) void {
         "raylib [core] example - basic window",
     );
     rl.setTargetFPS(60);
-
-    state.allocator = std.heap.page_allocator;
-    state.snake.segments = std.ArrayList(types.Point2).init(state.allocator);
-    state.snake.segments.append(.{ .x = 3, .y = 6 }) catch unreachable;
-    state.snake.segments.append(.{ .x = 4, .y = 6 }) catch unreachable;
-    state.snake.segments.append(.{ .x = 5, .y = 6 }) catch unreachable;
-    state.snake.direction = .right;
-    state.food = .{ .x = 15, .y = 6 };
 }
 
 export fn update(state: *GameState) void {
@@ -63,9 +57,6 @@ export fn update(state: *GameState) void {
     drawSnake(size, state.snake.segments.items);
     drawFood(size, state.food);
 
-    if (rl.isMouseButtonPressed(.mouse_button_left))
-        state.score += 1;
-
     rl.endDrawing();
 }
 
@@ -79,7 +70,7 @@ fn drawSnake(size: i32, segments: []types.Point2) void {
         rl.drawRectangleRounded(
             .{
                 .x = @floatFromInt(segment.x * size),
-                .y = @floatFromInt(segment.y * size),
+                .y = @floatFromInt((segment.y + 1) * size),
                 .width = @floatFromInt(size),
                 .height = @floatFromInt(size),
             },
@@ -93,7 +84,7 @@ fn drawSnake(size: i32, segments: []types.Point2) void {
 fn drawFood(size: f32, position: types.Point2) void {
     const center: rl.Vector2 = .{
         .x = @as(f32, @floatFromInt(position.x)) * size + size * 0.5,
-        .y = @as(f32, @floatFromInt(position.y)) * size + size * 0.5,
+        .y = @as(f32, @floatFromInt(position.y)) * size + size * 1.5,
     };
 
     rl.drawCircleV(

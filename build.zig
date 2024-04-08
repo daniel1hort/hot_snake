@@ -36,6 +36,10 @@ pub fn build(b: *std.Build) void {
         .target = target,
         .optimize = optimize,
     });
+    snake_lib.addModule("raylib", raylib_zig);
+    snake_lib.addLibraryPath(.{ .path = "raylib/zig-out/lib" });
+    snake_lib.linkSystemLibrary("raylib");
+    snake_lib.linkLibC();
     b.installArtifact(snake_lib);
 
     if (build_exe) {
@@ -47,9 +51,9 @@ pub fn build(b: *std.Build) void {
         });
         exe.addLibraryPath(.{ .path = "raylib/zig-out/lib" });
         exe.linkSystemLibrary("raylib");
-        exe.linkSystemLibrary("winmm");
-        exe.linkSystemLibrary("gdi32");
-        exe.linkSystemLibrary("opengl32");
+        //exe.linkSystemLibrary("winmm");
+        //exe.linkSystemLibrary("gdi32");
+        //exe.linkSystemLibrary("opengl32");
         exe.linkLibC();
         exe.addModule("raylib", raylib_zig);
         //exe.subsystem = .Windows;

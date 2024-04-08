@@ -2,11 +2,17 @@ const std = @import("std");
 
 pub const GameState = struct {
     allocator: std.mem.Allocator = undefined,
-    should_exit: bool = false,
+    timer: std.time.Timer = undefined,
     ticks: u128 = 0,
+    ms_last_update: u64 = 0,
+    ms_between_updates: u64 = 100,
+
+    should_exit: bool = false,
     snake: Snake = undefined,
     food: Point2 = undefined,
     score: u32 = 0,
+    map_size: Point2 = .{.x = 20, .y = 11},
+    game_over: bool = false,
 };
 
 pub const Snake = struct {
