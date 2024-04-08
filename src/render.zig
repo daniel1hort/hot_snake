@@ -57,6 +57,10 @@ export fn update(state: *GameState) void {
     drawSnake(size, state.snake.segments.items);
     drawFood(size, state.food);
 
+    if (state.game_over) {
+        drawGameOverOverlay(state.score);
+    }
+
     rl.endDrawing();
 }
 
@@ -118,4 +122,45 @@ fn drawGrid(size: u32) void {
             fore_color,
         );
     }
+}
+
+fn drawGameOverOverlay(score: u32) void {
+    const bounds: rl.Rectangle = .{
+        .x = screen_width * 0.2,
+        .y = screen_height * 0.2,
+        .width = screen_width * 0.6,
+        .height = screen_height * 0.6,
+    };
+    rl.drawRectangleRec(bounds, fore_color);
+
+    const text_size = 50;
+    const gap = 25;
+    const text_area_height = text_size * 2 + gap;
+
+    var buffer: [100]u8 = undefined;
+    var stream = std.io.fixedBufferStream(&buffer);
+    const writer = stream.writer();
+
+    writer.print("Game Over\x00", .{}) catch unreachable;
+    const header_text = cString(stream.getWritten());
+    const header_length = rl.measureText(header_text, text_size);
+    rl.drawText(
+        header_text,
+        @divFloor(screen_width - header_length, 2),
+        bounds.y + @divFloor(bounds.height - text_area_height, 2),
+        text_size,
+        back_color,
+    );
+
+    stream.reset();
+    writer.print("Your score is {d}\x00", .{score}) catch unreachable;
+    const score_text = cString(stream.getWritten());
+    const score_length = rl.measureText(score_text, text_size);
+    rl.drawText(
+        score_text,
+        @divFloor(screen_width - score_length, 2),
+        bounds.y + text_size + gap + @divFloor(bounds.height - text_area_height, 2),
+        text_size,
+        back_color,
+    );
 }
