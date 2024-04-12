@@ -18,6 +18,7 @@ pub const GameState = struct {
 pub const Snake = struct {
     segments: std.ArrayList(Point2),
     direction: Direction,
+    next_directions: []Direction,
 };
 
 pub const Point2 = struct {
@@ -26,6 +27,7 @@ pub const Point2 = struct {
 };
 
 pub const Direction = enum {
+    none,
     up,
     right,
     down,
@@ -34,6 +36,7 @@ pub const Direction = enum {
 
 pub const directionMap = blk: {
     var array = std.EnumArray(Direction, Point2).initUndefined();
+    array.set(.none, .{.x = 0, .y = 0});
     array.set(.up, .{ .x = 0, .y = -1 });
     array.set(.right, .{ .x = 1, .y = 0 });
     array.set(.down, .{ .x = 0, .y = 1 });

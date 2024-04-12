@@ -20,6 +20,8 @@ export fn update(state: *GameState) void {
         return;
 
     if (shouldUpdate(state)) {
+        updateDirection(state);
+
         const head = state.snake.segments.getLast();
         const dir_off = types.directionMap.get(state.snake.direction);
         const new_head: types.Point2 = .{
@@ -41,19 +43,49 @@ export fn update(state: *GameState) void {
         }
     }
 
-    const dir = state.snake.direction;
-    state.snake.direction = switch (key_pressed) {
-        .key_w, .key_up => if (dir != .down) .up else dir,
-        .key_d, .key_right => if (dir != .left) .right else dir,
-        .key_s, .key_down => if (dir != .up) .down else dir,
-        .key_a, .key_left => if (dir != .right) .left else dir,
-        else => dir,
-    };
+    bufferDirection(state, key_pressed);
 }
 
 export fn deinit(state: *GameState) void {
     state.snake.segments.clearAndFree();
     state.snake.segments.deinit();
+}
+
+fn nextDirection(key: rl.KeyboardKey, previous: types.Direction) types.Direction {
+    return switch (key) {
+        .key_w, .key_up => if (previous != .down) .up else .none,
+        .key_d, .key_right => if (previous != .left) .right else .none,
+        .key_s, .key_down => if (previous != .up) .down else .none,
+        .key_a, .key_left => if (previous != .right) .left else .none,
+        else => .none,
+    };
+}
+
+fn bufferDirection(state: *GameState, key: rl.KeyboardKey) void {
+    const index = for (state.snake.next_directions, 0..) |dir, i| {
+        if (dir == .none) break i;
+    } else null;
+
+    if (index) |value| {
+        const previous = switch (value) {
+            0 => state.snake.direction,
+            else => state.snake.next_directions[value - 1],
+        };
+        state.snake.next_directions[value] = nextDirection(key, previous);
+    }
+}
+
+fn updateDirection(state: *GameState) void {
+    if (state.snake.next_directions[0] == .none)
+        return;
+
+    state.snake.direction = state.snake.next_directions[0];
+    if (state.snake.next_directions.len >= 2) {
+        for (0..state.snake.next_directions.len - 1) |index| {
+            state.snake.next_directions[index] = state.snake.next_directions[index + 1];
+        }
+    }
+    state.snake.next_directions[state.snake.next_directions.len - 1] = .none;
 }
 
 fn shouldUpdate(state: *GameState) bool {
@@ -102,6 +134,11 @@ fn initGame(state: *GameState) void {
     state.snake.segments.append(.{ .x = 3, .y = 6 }) catch unreachable;
     state.snake.segments.append(.{ .x = 4, .y = 6 }) catch unreachable;
     state.snake.segments.append(.{ .x = 5, .y = 6 }) catch unreachable;
+    
+    state.allocator.free(state.snake.next_directions);
+    state.snake.next_directions = state.allocator.alloc(types.Direction, 2) catch unreachable;
+    @memset(state.snake.next_directions, .none);
+
     state.snake.direction = .right;
     state.food = .{ .x = 15, .y = 6 };
     state.score = 0;

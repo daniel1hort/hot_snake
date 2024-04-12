@@ -65,7 +65,7 @@ export fn update(state: *GameState) void {
 }
 
 export fn deinit(state: *GameState) void {
-    state.snake.segments.deinit();
+    _ = state;
     rl.closeWindow();
 }
 
