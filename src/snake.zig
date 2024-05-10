@@ -49,6 +49,7 @@ export fn update(state: *GameState) void {
 export fn deinit(state: *GameState) void {
     state.snake.segments.clearAndFree();
     state.snake.segments.deinit();
+    state.allocator.free(state.snake.next_directions);
 }
 
 fn nextDirection(key: rl.KeyboardKey, previous: types.Direction) types.Direction {
